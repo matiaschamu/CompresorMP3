@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using NAudio.FileFormats.Mp3;
+using NAudio.Lame;
 using NAudio.Wave;
 using System.Windows.Forms;
 
@@ -21,17 +24,25 @@ namespace BibliotecaMaf.Clases.Audio
 		{
 			if (Segundos > 0)
 			{
-				WaveStream pcmStream = new WaveFileReader(Application.StartupPath + "\\beep3.dat");
-				WaveStream pcmStream2 = new WaveFileReader(Application.StartupPath + "\\beep.dat");
-				byte[] Buf = new byte[pcmStream.Length];
-				pcmStream.Read(Buf, 0, Buf.Length);
-				for (int r = 0 ; r < Segundos - 1 ; r++)
+				byte[] B = Resources.beep3;
+				WaveStream mPcmStream = new WaveFileReader(new MemoryStream(B));
+
+				byte[] B2 = Resources.beep;
+				WaveStream mPcmStream2 = new WaveFileReader(new MemoryStream(B2));
+
+				//WaveStream mPcmStream = new WaveFileReader(Application.StartupPath + "\\beep3.wav");
+				//WaveStream mPcmStream2 = new WaveFileReader(Application.StartupPath + "\\beep.wav");
+				byte[] Buf = new byte[mPcmStream.Length];
+				mPcmStream.Read(Buf, 0, Buf.Length);
+				for (int r = 0; r < Segundos - 1; r++)
 				{
 					int tamañoAnterior = Buf.Length;
-					Array.Resize(ref Buf, (int)(Buf.Length + pcmStream2.Length));
-					pcmStream2.Position = 0;
-					pcmStream2.Read(Buf, tamañoAnterior, (int)pcmStream2.Length);
+					Array.Resize(ref Buf, (int) (Buf.Length + mPcmStream2.Length));
+					mPcmStream2.Position = 0;
+					mPcmStream2.Read(Buf, tamañoAnterior, (int) mPcmStream2.Length);
 				}
+
+
 
 				return new RawDatos(Buf, new RawFormat(48000, 16, 1));
 			}
@@ -40,6 +51,7 @@ namespace BibliotecaMaf.Clases.Audio
 				return new RawDatos(new byte[0], new RawFormat(48000, 16, 1));
 			}
 		}
+
 		/// <summary>
 		/// Genera una onda con el sonido BEEP cada 1 Segundo del largo especificado
 		/// </summary>
@@ -49,14 +61,17 @@ namespace BibliotecaMaf.Clases.Audio
 		{
 			if (Segundos > 0)
 			{
-				WaveStream pcmStream2 = new WaveFileReader(Application.StartupPath + "\\beep.dat");
+				byte[] B = Resources.beep;
+				WaveStream mPcmStream = new WaveFileReader(new MemoryStream(B));
+
+				//WaveStream pcmStream2 = new WaveFileReader(Application.StartupPath + "\\beep.dat");
 				byte[] Buf = new byte[0];
-				for (int r = 0 ; r < Segundos ; r++)
+				for (int r = 0; r < Segundos; r++)
 				{
 					int tamañoAnterior = Buf.Length;
-					Array.Resize(ref Buf, (int)(Buf.Length + pcmStream2.Length));
-					pcmStream2.Position = 0;
-					pcmStream2.Read(Buf, tamañoAnterior, (int)pcmStream2.Length);
+					Array.Resize(ref Buf, (int) (Buf.Length + mPcmStream.Length));
+					mPcmStream.Position = 0;
+					mPcmStream.Read(Buf, tamañoAnterior, (int) mPcmStream.Length);
 				}
 				return new RawDatos(Buf, new RawFormat(48000, 16, 1));
 
@@ -114,22 +129,28 @@ namespace BibliotecaMaf.Clases.Audio
 			}
 			finally
 			{
-				
+
 			}
 
 		}
 
+		/// <summary>
+		/// Lee un Stream en MP3 y devuelve el resultado en RawDatos
+		/// Hay que tener en cuenta que esta funcion lee el stream completo hasta el fin.
+		/// </summary>
+		/// <param name="streamMp3">Stream donde se encuentran los Frames MP3</param>
+		/// <returns>Devuelve una objeto RawDatos con la informacion PCM convertida</returns>
 		public static RawDatos Mp3StreamToRawBytes(System.IO.Stream streamMp3)
 		{
 			try
 			{
 				Mp3FileReader mReader = new Mp3FileReader(streamMp3);
-				WaveStream mPcmStream = WaveFormatConversionStream.CreatePcmStream(mReader);
-				
+				WaveStream mPcmStream = new BlockAlignReductionStream( WaveFormatConversionStream.CreatePcmStream(mReader));
+
 				try
 				{
 					byte[] mRetorno = new byte[mPcmStream.Length];
-					int mLeido = mPcmStream.Read(mRetorno, 0, (int)mPcmStream.Length);
+					int mLeido = mPcmStream.Read(mRetorno, 0, (int) mPcmStream.Length);
 					return new RawDatos(mRetorno, new RawFormat(mPcmStream.WaveFormat.SampleRate, mPcmStream.WaveFormat.BitsPerSample, mPcmStream.WaveFormat.Channels));
 				}
 				catch (Exception)
@@ -152,6 +173,52 @@ namespace BibliotecaMaf.Clases.Audio
 			}
 		}
 
+
+		public static int Mp3BytesStreamingToRawBytes(byte[] mp3, ref RawDatos datos, ref IMp3FrameDecompressor decompressor)
+		{
+
+			List<byte> mDatosConvertidos = new List<byte>();
+			MemoryStream M = new MemoryStream(mp3);
+			WaveFormat waveFormat = null;
+			int mBytesProcesed = 0;
+			do
+			{
+				NAudio.Wave.Mp3Frame frame = null;
+				try
+				{
+					frame = Mp3Frame.LoadFromStream(M);
+				}
+				catch ( System.IO.EndOfStreamException  )
+				{
+
+				}
+				catch(Exception)
+				{
+					throw;
+				}
+
+				if (frame != null)
+				{
+					var buffer = new byte[65536]; // needs to be big enough to hold a decompressed frame
+
+					if (decompressor == null)
+					{
+						waveFormat = new Mp3WaveFormat(frame.SampleRate, frame.ChannelMode == ChannelMode.Mono ? 1 : 2, frame.FrameLength, frame.BitRate);
+						decompressor = new DmoMp3FrameDecompressor(waveFormat);
+					}
+					int decompressed = decompressor.DecompressFrame(frame, buffer, 0);
+					mBytesProcesed = mBytesProcesed + frame.FrameLength;
+					Array.Resize(ref buffer, decompressed);
+					mDatosConvertidos.AddRange(buffer);
+				}
+			} while (M.Position < M.Length);
+
+			datos = new RawDatos(new RawFormat(decompressor.OutputFormat.SampleRate, decompressor.OutputFormat.BitsPerSample, decompressor.OutputFormat.Channels));
+			datos.InsertarRaw(mDatosConvertidos.ToArray());
+			return mBytesProcesed;
+		}
+
+
 		/// <summary>
 		/// Devuelve el valor promedio de volumen de 0 - 100% en una ubicacion dada.
 		/// </summary>
@@ -163,6 +230,7 @@ namespace BibliotecaMaf.Clases.Audio
 		{
 			return ValorPorcentualDelVolumen(Mp3ArchivoToRawBytes(PathArchivo), OffsetmSeg, CantMuestras);
 		}
+
 		/// <summary>
 		/// Devuelve el valor promedio de volumen de 0 - 100% en una ubicacion dada.
 		/// </summary>
@@ -177,8 +245,8 @@ namespace BibliotecaMaf.Clases.Audio
 				throw new Exception();
 			}
 			long Promedio = 0;
-			long NumeroMuestra = (OffsetmSeg * Audio.Formato.MuestrasPorSeg / 1000);
-			for (int i = 0 ; i < CantMuestras ; i++)
+			long NumeroMuestra = (OffsetmSeg*Audio.Formato.MuestrasPorSeg/1000);
+			for (int i = 0; i < CantMuestras; i++)
 			{
 				long ValorMuestra = Audio.GetValorMuestraMono(NumeroMuestra + i);
 				if (ValorMuestra > 32767)
@@ -187,10 +255,10 @@ namespace BibliotecaMaf.Clases.Audio
 				}
 				Promedio = Promedio + ValorMuestra;
 			}
-			Promedio = Promedio / CantMuestras;
-			return (byte)(Promedio * 100 / 32768);
+			Promedio = Promedio/CantMuestras;
+			return (byte) (Promedio*100/32768);
 		}
-		
+
 		/// <summary>
 		/// Devuelve el valor Maximo de Volumen de 0 - 100% en una ubicacion determinada hasta la duracion indicada distribuyendo las muestras de forma proporcional.
 		/// </summary>
@@ -199,37 +267,37 @@ namespace BibliotecaMaf.Clases.Audio
 		/// <param name="duracion">La duracion del muestreo en mSeg</param>
 		/// <param name="cantMuestras">Cantidad de muestras dentro del calculo</param>
 		/// <returns>Un valor de 0-100%</returns>
-		public static byte ValorMaximoDelVolumen(RawDatos audio, long offsetmSeg, long duracionMseg , int cantMuestras)
+		public static byte ValorMaximoDelVolumen(RawDatos audio, long offsetmSeg, long duracionMseg, int cantMuestras)
 		{
 			if (offsetmSeg < 0 || cantMuestras < 1)
 			{
 				throw new Exception();
 			}
 			long mValorMax = 0;
-			long NumeroMuestra = (offsetmSeg * audio.Formato.MuestrasPorSeg / 1000);
-			double mCalcSaltos = ((double)(audio.Formato.MuestrasPorSeg)) / 1000 * duracionMseg / cantMuestras;
+			long NumeroMuestra = (offsetmSeg*audio.Formato.MuestrasPorSeg/1000);
+			double mCalcSaltos = ((double) (audio.Formato.MuestrasPorSeg))/1000*duracionMseg/cantMuestras;
 			long mSaltoMuestras = (long) mCalcSaltos;
 
-			if (mSaltoMuestras==0)
+			if (mSaltoMuestras == 0)
 			{
 				mSaltoMuestras = 1;
 				cantMuestras = (int) (((double) (audio.Formato.MuestrasPorSeg))/1000*duracionMseg);
 			}
-			
-			for (long i = 0 ; i < cantMuestras ; i++)
+
+			for (long i = 0; i < cantMuestras; i++)
 			{
-				long ValorMuestra = audio.GetValorMuestraMono(NumeroMuestra + i * mSaltoMuestras);
+				long ValorMuestra = audio.GetValorMuestraMono(NumeroMuestra + i*mSaltoMuestras);
 				if (ValorMuestra > 32767)
 				{
 					ValorMuestra = 65536 - ValorMuestra;
 				}
 
-				if (ValorMuestra>mValorMax)
+				if (ValorMuestra > mValorMax)
 				{
 					mValorMax = ValorMuestra;
-				}	
+				}
 			}
-			return (byte)(mValorMax * 100 / 32768);
+			return (byte) (mValorMax*100/32768);
 		}
 
 
@@ -255,6 +323,7 @@ namespace BibliotecaMaf.Clases.Audio
 			RawDatos Audio = Mp3ArchivoToRawBytes(PathArchivo);
 			return Audio.Duracion.TotalMilliseconds;
 		}
+
 		/// <summary>
 		/// Genera el Riff Header de una secuencia "RawData"
 		/// </summary>
@@ -271,22 +340,22 @@ namespace BibliotecaMaf.Clases.Audio
 				S = new System.IO.MemoryStream();
 				Bw = new System.IO.BinaryWriter(S);
 
-				Bw.Write(new char[4] { 'R', 'I', 'F', 'F' });
-				Bw.Write((int)(RawDataLength + 36));
-				Bw.Write(new char[8] { 'W', 'A', 'V', 'E', 'f', 'm', 't', ' ' });
-				Bw.Write((int)16);
-				Bw.Write((short)1);
-				Bw.Write((short)RawFormat.Canales);
-				Bw.Write((int)RawFormat.MuestrasPorSeg);
-				Bw.Write((int)(RawFormat.MuestrasPorSeg * ((RawFormat.BytesPorMuestra * RawFormat.Canales))));
-				Bw.Write((short)((RawFormat.BytesPorMuestra * RawFormat.Canales)));
-				Bw.Write((short)RawFormat.Bits);
-				Bw.Write(new char[4] { 'd', 'a', 't', 'a' });
-				Bw.Write((int)RawDataLength);
+				Bw.Write(new char[4] {'R', 'I', 'F', 'F'});
+				Bw.Write((int) (RawDataLength + 36));
+				Bw.Write(new char[8] {'W', 'A', 'V', 'E', 'f', 'm', 't', ' '});
+				Bw.Write((int) 16);
+				Bw.Write((short) 1);
+				Bw.Write((short) RawFormat.Canales);
+				Bw.Write((int) RawFormat.MuestrasPorSeg);
+				Bw.Write((int) (RawFormat.MuestrasPorSeg*((RawFormat.BytesPorMuestra*RawFormat.Canales))));
+				Bw.Write((short) ((RawFormat.BytesPorMuestra*RawFormat.Canales)));
+				Bw.Write((short) RawFormat.Bits);
+				Bw.Write(new char[4] {'d', 'a', 't', 'a'});
+				Bw.Write((int) RawDataLength);
 
 				Temp = new byte[S.Length];
 				S.Position = 0;
-				S.Read(Temp, 0, (int)S.Length);
+				S.Read(Temp, 0, (int) S.Length);
 			}
 			finally
 			{

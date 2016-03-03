@@ -24,6 +24,7 @@ namespace BibliotecaMaf.Clases.Audio.Lame
 		_256 = 256,
 		_320 = 320
 	}
+
 	public enum CalidadVBR
 	{
 		_0,
@@ -37,12 +38,14 @@ namespace BibliotecaMaf.Clases.Audio.Lame
 		_8,
 		_9,
 	}
+
 	public enum Calidad
 	{
 		CalidadMuyBuena = 0, //LQP_CD
-		CalidadNormal,       //LQP_TAPE
-		CalidadRegular,      //LQP_RADIO
+		CalidadNormal, //LQP_TAPE
+		CalidadRegular, //LQP_RADIO
 	}
+
 	[StructLayout(LayoutKind.Sequential)]
 	public struct LHV1
 	{
@@ -107,18 +110,27 @@ namespace BibliotecaMaf.Clases.Audio.Lame
 		private MetodosVBR nVbrMethod;
 		private int bNoRes;
 
-		public LHV1(Calidad CalidadPredefinida, int Nivel, TipoDeCodificacion Tipo, int Muestras)
+		public LHV1(Calidad CalidadPredefinida, int Nivel, TipoDeCodificacion Tipo, RawFormat formato)
 		{
 			dwStructVersion = 1;
-			dwStructSize = (uint)Marshal.SizeOf(typeof(BE_CONFIG));
+			dwStructSize = (uint) Marshal.SizeOf(typeof (BE_CONFIG));
 			dwMpegVersion = MPEG1;
-			dwSampleRate = 44100;
-			if (Muestras != 0)
-			{
-				dwSampleRate = (uint)Muestras;
-			}
+			dwSampleRate = (uint) formato.MuestrasPorSeg;
+			//if (Muestras != 0)
+			//{
+			//	dwSampleRate = (uint)Muestras;
+			//}
 			dwReSampleRate = 0;
-			nMode = Modos.MONO;
+
+			if (formato.Canales == 1)
+			{
+				nMode = Modos.MONO;
+			}
+			else
+			{
+				nMode = Modos.STEREO;
+			}
+
 			dwBitrate = 0;
 			bWriteVBRHeader = 0;
 			bEnableVBR = 0;
@@ -151,15 +163,14 @@ namespace BibliotecaMaf.Clases.Audio.Lame
 				nPreset = CalidadesPredefinidasDeLAME.LQP_NORMAL_QUALITY;
 
 				if (Tipo == TipoDeCodificacion.CBR) //Usar una calidad personalizada (CBR)
-					dwBitrate = (uint)Nivel;
-				else
-					if (Tipo == TipoDeCodificacion.VBR) //Usar una calidad personalizada (VBR)
-					{
-						bEnableVBR = 1;
-						nVBRQuality = Nivel;
-						bWriteVBRHeader = 1;
-						nVbrMethod = MetodosVBR.VBR_METHOD_NEW;
-					}
+					dwBitrate = (uint) Nivel;
+				else if (Tipo == TipoDeCodificacion.VBR) //Usar una calidad personalizada (VBR)
+				{
+					bEnableVBR = 1;
+					nVBRQuality = Nivel;
+					bWriteVBRHeader = 1;
+					nVbrMethod = MetodosVBR.VBR_METHOD_NEW;
+				}
 			}
 
 			dwPsyModel = 0;
@@ -173,6 +184,7 @@ namespace BibliotecaMaf.Clases.Audio.Lame
 			dwVbrAbr_bps = 0;
 		}
 	}
+
 	[StructLayout(LayoutKind.Sequential)]
 	public class BE_CONFIG
 	{
@@ -181,14 +193,13 @@ namespace BibliotecaMaf.Clases.Audio.Lame
 		public uint dwConfig;
 		public LHV1 Info;
 
-		public BE_CONFIG(Calidad CalidadPredefinida,
-						 int Nivel,
-						 LHV1.TipoDeCodificacion Tipo, int Muestras)
+		public BE_CONFIG(Calidad CalidadPredefinida, int Nivel, LHV1.TipoDeCodificacion Tipo, RawFormat formato)
 		{
 			dwConfig = BE_CONFIG_LAME;
-			Info = new LHV1(CalidadPredefinida, Nivel, Tipo, Muestras);
+			Info = new LHV1(CalidadPredefinida, Nivel, Tipo, formato);
 		}
 	}
+
 	internal class NativeMethods
 	{
 		//Valores de retorno de las funciones
@@ -255,6 +266,10 @@ namespace BibliotecaMaf.Clases.Audio.Lame
 		//protected static extern uint beEncodeChunk(uint hbeStream, uint nSamples, IntPtr pSamples, [In, Out] byte[] pOutput, ref uint pdwOutput);
 		protected static extern uint beEncodeChunk(UIntPtr hbeStream, uint nSamples, UIntPtr pSamples, UIntPtr pOutput, ref uint pdwOutput);
 
+
+
+
+
 		/// <summary>
 		/// Esta funcion es la primera a llamarse antes de comensar un flujo codificado
 		/// </summary>
@@ -299,8 +314,15 @@ namespace BibliotecaMaf.Clases.Audio.Lame
 		/// Este Buffer debe ser de al menos el tamaño mínimo devuelto por beInitStream ().</param>
 		/// <param name="pdwOutput">Puntero a DWORD (unsig 32 bits)Donde se retorna el numero de bytes escritos</param>
 		/// <returns>Codigo de error 0=exito</returns>
-		[DllImport("Lame_enc x64.dll", EntryPoint = "beEncodeChunk",  CallingConvention = CallingConvention.Cdecl)]
+		[DllImport("Lame_enc x64.dll", EntryPoint = "beEncodeChunk", CallingConvention = CallingConvention.Cdecl)]
 		protected static extern uint beEncodeChunk_64(UIntPtr hbeStream, uint nSamples, UIntPtr pSamples, UIntPtr pOutput, ref uint pdwOutput);
+
+
+
+
+
+
+
 
 		/// <summary>
 		/// Codifica un trozo de muestras. Tenga en cuenta que si ha configurado la salida mono para generar archivos MP3 se debe alimentar beEncodeChunk () con muestras mono!
@@ -312,7 +334,7 @@ namespace BibliotecaMaf.Clases.Audio.Lame
 		/// <returns>Codigo de error 0=exito</returns>
 		public static uint Convertir(uint hbeStream, byte[] buffer, byte[] pOutput, ref uint pdwOutput)
 		{
-			return Convertir( hbeStream, buffer, 0, (uint)buffer.Length, pOutput, ref pdwOutput);
+			return Convertir(hbeStream, buffer, 0, (uint) buffer.Length, pOutput, ref pdwOutput);
 		}
 
 		/// <summary>
@@ -335,19 +357,19 @@ namespace BibliotecaMaf.Clases.Audio.Lame
 				int TamanoArquitectura = IntPtr.Size;
 				if (TamanoArquitectura == 4)
 				{
-					UIntPtr PBuffer = (UIntPtr)(bufferGC.AddrOfPinnedObject().ToInt64() + index);
-					UIntPtr PpOutput = (UIntPtr)(pOutputGC.AddrOfPinnedObject().ToInt64());
+					UIntPtr PBuffer = (UIntPtr) (bufferGC.AddrOfPinnedObject().ToInt64() + index);
+					UIntPtr PpOutput = (UIntPtr) (pOutputGC.AddrOfPinnedObject().ToInt64());
 					UIntPtr PhbeStream = new UIntPtr(hbeStream);
 					//res = beEncodeChunk(hbeStream, nBytes / 2, Puntero, pOutput, ref pdwOutput);
-					res = beEncodeChunk( PhbeStream, nBytes / 2, PBuffer, PpOutput, ref pdwOutput);
+					res = beEncodeChunk(PhbeStream, nBytes/2, PBuffer, PpOutput, ref pdwOutput);
 				}
 				else
 				{
-					UIntPtr PBuffer = (UIntPtr)(bufferGC.AddrOfPinnedObject().ToInt64() + index);
-					UIntPtr PpOutput = (UIntPtr)(pOutputGC.AddrOfPinnedObject().ToInt64());
+					UIntPtr PBuffer = (UIntPtr) (bufferGC.AddrOfPinnedObject().ToInt64() + index);
+					UIntPtr PpOutput = (UIntPtr) (pOutputGC.AddrOfPinnedObject().ToInt64());
 					UIntPtr PhbeStream = new UIntPtr(hbeStream);
 					//res = beEncodeChunk(hbeStream, nBytes / 2, Puntero, pOutput, ref pdwOutput);
-					res = beEncodeChunk_64(PhbeStream, nBytes / 2, PBuffer, PpOutput, ref pdwOutput);
+					res = beEncodeChunk_64(PhbeStream, nBytes/2, PBuffer, PpOutput, ref pdwOutput);
 				}
 			}
 			catch
