@@ -78,9 +78,9 @@ namespace BibliotecaMaf.Clases.Audio
 		private long mByteBufferLowEvent = 0;
 		private bool mDisposed = false;
 		private bool mCancelarReproduccion = false;
-		private System.Threading.Semaphore mBlokArranqueSubproceso = new System.Threading.Semaphore(1, 1);
+		private readonly System.Threading.Semaphore mBlokArranqueSubproceso = new System.Threading.Semaphore(1, 1);
 		//private System.Threading.Semaphore mBlokEsperaCierreSubproceso = new System.Threading.Semaphore(1, 1);
-		private System.Threading.Semaphore mBlokCargarDatos = new System.Threading.Semaphore(1, 1);
+		private readonly System.Threading.Semaphore mBlokCargarDatos = new System.Threading.Semaphore(1, 1);
 		private long mCantidadReproducida = 0;
 
 		private long mPlayingBytesCountOnPlaying = 0;
@@ -305,16 +305,16 @@ namespace BibliotecaMaf.Clases.Audio
 		/// <param name="MuestrasPorSeg">Cantidad de muestras por segundo para la reproduccion</param>
 		/// <param name="Bits">Cantidad de bits para la reproduccion</param>
 		/// <param name="Canales">Cantidad de canales para la reproduccion</param>
-		/// <param name="autoStopBufferEmpty">Si es true cuando el reproductor se queda sin informacion se detiene automaticamente</param>
-		public void Reproducir(int TamañoBuffer, int MuestrasPorSeg, int Bits, int Canales)
+		/// <param name="audio">Datos de audio que se cargaran al inicio, es Opcional</param>
+		public void Reproducir(int TamañoBuffer, int MuestrasPorSeg, int Bits, int Canales, RawDatos audio=null)
 		{
 			Console.Write("Iniciando Sonido \r\n");
 			mCancelarReproduccion = true;
 
-
 			try
 			{
 				mBlokArranqueSubproceso.WaitOne();
+
 				if (mWaveOutt == null)
 				{
 					mWaveOutt = new DirectSoundOut();
@@ -329,6 +329,25 @@ namespace BibliotecaMaf.Clases.Audio
 				mWaveProvider = new BufferedWaveProvider(mWaveFormat);
 				mWaveProvider.BufferLength = TamañoBuffer;
 				mWaveOutt.Init(mWaveProvider);
+
+				if (audio != null)
+				{
+					try
+					{
+						mBlokCargarDatos.WaitOne();
+						mCantidadReproducida += audio.DatosRaw.Length;
+						mWaveProvider.AddSamples(audio.DatosRaw, 0, audio.DatosRaw.Length);
+					}
+					catch (Exception)
+					{
+						throw;
+					}
+					finally
+					{
+						mBlokCargarDatos.Release();
+					}
+				}
+
 				mWaveOutt.Play();
 
 				Console.Write("Iniciando Sonido, " + mWaveOutt.PlaybackState.ToString() + "\r\n");
@@ -357,21 +376,7 @@ namespace BibliotecaMaf.Clases.Audio
 		/// <param name="TamañoBuffer">Establece el tamaño del buffer para la reproduccion en curso</param>
 		public void Reproducir(RawDatos Audio, int TamañoBuffer)
 		{
-			Reproducir(TamañoBuffer, Audio.Formato.MuestrasPorSeg, Audio.Formato.Bits, Audio.Formato.Canales);
-			try
-			{
-				mBlokCargarDatos.WaitOne();
-				mCantidadReproducida += Audio.DatosRaw.Length;
-				mWaveProvider.AddSamples(Audio.DatosRaw, 0, Audio.DatosRaw.Length);
-			}
-			catch (Exception)
-			{
-				throw;
-			}
-			finally
-			{
-				mBlokCargarDatos.Release();
-			}
+			Reproducir(TamañoBuffer, Audio.Formato.MuestrasPorSeg, Audio.Formato.Bits, Audio.Formato.Canales, Audio);
 		}
 
 		/// <summary>
@@ -422,7 +427,7 @@ namespace BibliotecaMaf.Clases.Audio
 					mWaveOutt.Dispose();
 					mWaveOutt = null;
 					mCantidadReproducida = 0;
-					Console.Write("Stop General \r\n");
+					Console.Write("Stop Interno \r\n");
 				}
 				catch (Exception)
 				{
@@ -440,7 +445,6 @@ namespace BibliotecaMaf.Clases.Audio
 			try
 			{
 				mBlokArranqueSubproceso.WaitOne();
-
 
 				//mBlokEsperaCierreSubproceso.WaitOne();
 				long mPlayingCountTemp = 0;
@@ -461,7 +465,6 @@ namespace BibliotecaMaf.Clases.Audio
 							}
 						}
 					}
-
 					if (mPlayingBytesCountOnPlaying > 0)
 					{
 						if (PlayingBytesCount - mPlayingCountTemp > mPlayingBytesCountOnPlaying)
@@ -472,23 +475,29 @@ namespace BibliotecaMaf.Clases.Audio
 					}
 				}
 				Console.Write("Saliendo Subproceso, " + mWaveOutt.PlaybackState.ToString() + ", " + mCancelarReproduccion + "\r\n");
+
 			}
 			catch (Exception)
 			{
-
 				throw;
 			}
 			finally
 			{
 				//mBlokEsperaCierreSubproceso.Release();
+				try
+				{
+					mWaveOutt.Stop();
+					mWaveOutt.Dispose();
+					mWaveOutt = null;
+					mCantidadReproducida = 0;
+					OnStop();
+				}
+				catch (Exception)
+				{
+					throw;
+				}
 
-				mWaveOutt.Stop();
-				mWaveOutt.Dispose();
-				mWaveOutt = null;
-				mCantidadReproducida = 0;
-				Console.Write("Stop General \r\n");
 				mBlokArranqueSubproceso.Release();
-				OnStop();
 			}
 		}
 	}
