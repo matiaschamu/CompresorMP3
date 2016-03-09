@@ -6,10 +6,10 @@ using System.Runtime.CompilerServices;
 // conjunto de atributos. Cambie estos atributos para modificar la información
 // asociada con un ensamblado.
 //
-[assembly: AssemblyTitle("")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Liberia de Audio")]
+[assembly: AssemblyDescription("Liberia de Audio")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("MAF")]
 [assembly: AssemblyProduct("")]
 [assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
@@ -26,7 +26,7 @@ using System.Runtime.CompilerServices;
 // Puede especificar todos los valores o usar los valores predeterminados (número de versión de compilación y de revisión) 
 // usando el símbolo '*' como se muestra a continuación:
 
-[assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("1.0.0.3")]
 
 //
 // Si desea firmar el ensamblado, debe especificar una clave para su uso. Consulte la documentación de 
@@ -56,3 +56,4 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyFile("")]
 [assembly: AssemblyKeyName("")]
+[assembly: AssemblyFileVersionAttribute("1.0.0.3")]
