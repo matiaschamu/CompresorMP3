@@ -113,9 +113,9 @@ namespace BibliotecaMaf.Clases.Audio.Lame
 		public LHV1(Calidad CalidadPredefinida, int Nivel, TipoDeCodificacion Tipo, RawFormat formato)
 		{
 			dwStructVersion = 1;
-			dwStructSize = (uint) Marshal.SizeOf(typeof (BE_CONFIG));
+			dwStructSize = (uint)Marshal.SizeOf(typeof(BE_CONFIG));
 			dwMpegVersion = MPEG1;
-			dwSampleRate = (uint) formato.MuestrasPorSeg;
+			dwSampleRate = (uint)formato.MuestrasPorSeg;
 			//if (Muestras != 0)
 			//{
 			//	dwSampleRate = (uint)Muestras;
@@ -163,7 +163,7 @@ namespace BibliotecaMaf.Clases.Audio.Lame
 				nPreset = CalidadesPredefinidasDeLAME.LQP_NORMAL_QUALITY;
 
 				if (Tipo == TipoDeCodificacion.CBR) //Usar una calidad personalizada (CBR)
-					dwBitrate = (uint) Nivel;
+					dwBitrate = (uint)Nivel;
 				else if (Tipo == TipoDeCodificacion.VBR) //Usar una calidad personalizada (VBR)
 				{
 					bEnableVBR = 1;
@@ -334,7 +334,7 @@ namespace BibliotecaMaf.Clases.Audio.Lame
 		/// <returns>Codigo de error 0=exito</returns>
 		public static uint Convertir(uint hbeStream, byte[] buffer, byte[] pOutput, ref uint pdwOutput)
 		{
-			return Convertir(hbeStream, buffer, 0, (uint) buffer.Length, pOutput, ref pdwOutput);
+			return Convertir(hbeStream, buffer, 0, (uint)buffer.Length, pOutput, ref pdwOutput);
 		}
 
 		/// <summary>
@@ -357,19 +357,19 @@ namespace BibliotecaMaf.Clases.Audio.Lame
 				int TamanoArquitectura = IntPtr.Size;
 				if (TamanoArquitectura == 4)
 				{
-					UIntPtr PBuffer = (UIntPtr) (bufferGC.AddrOfPinnedObject().ToInt64() + index);
-					UIntPtr PpOutput = (UIntPtr) (pOutputGC.AddrOfPinnedObject().ToInt64());
+					UIntPtr PBuffer = (UIntPtr)(bufferGC.AddrOfPinnedObject().ToInt64() + index);
+					UIntPtr PpOutput = (UIntPtr)(pOutputGC.AddrOfPinnedObject().ToInt64());
 					UIntPtr PhbeStream = new UIntPtr(hbeStream);
 					//res = beEncodeChunk(hbeStream, nBytes / 2, Puntero, pOutput, ref pdwOutput);
-					res = beEncodeChunk(PhbeStream, nBytes/2, PBuffer, PpOutput, ref pdwOutput);
+					res = beEncodeChunk(PhbeStream, nBytes / 2, PBuffer, PpOutput, ref pdwOutput);
 				}
 				else
 				{
-					UIntPtr PBuffer = (UIntPtr) (bufferGC.AddrOfPinnedObject().ToInt64() + index);
-					UIntPtr PpOutput = (UIntPtr) (pOutputGC.AddrOfPinnedObject().ToInt64());
+					UIntPtr PBuffer = (UIntPtr)(bufferGC.AddrOfPinnedObject().ToInt64() + index);
+					UIntPtr PpOutput = (UIntPtr)(pOutputGC.AddrOfPinnedObject().ToInt64());
 					UIntPtr PhbeStream = new UIntPtr(hbeStream);
 					//res = beEncodeChunk(hbeStream, nBytes / 2, Puntero, pOutput, ref pdwOutput);
-					res = beEncodeChunk_64(PhbeStream, nBytes/2, PBuffer, PpOutput, ref pdwOutput);
+					res = beEncodeChunk_64(PhbeStream, nBytes / 2, PBuffer, PpOutput, ref pdwOutput);
 				}
 			}
 			catch

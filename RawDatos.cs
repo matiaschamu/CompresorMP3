@@ -49,9 +49,6 @@ namespace BibliotecaMaf.Clases.Audio
 			mDuracion = new TimeSpan((long)((((double)mDatosRaw.Length) / (mWaveFormat.MuestrasPorSeg * mWaveFormat.BytesPorMuestra * mWaveFormat.Canales)) * 10000000));
 			mNumeroDeMuestras = mDatosRaw.Length / mWaveFormat.Canales / mWaveFormat.BytesPorMuestra;
 		}
-
-
-
 		public long NumeroDeMuestras
 		{
 			get
@@ -92,7 +89,7 @@ namespace BibliotecaMaf.Clases.Audio
 
 			index = (int)(Math.Truncate(((double)index) / (mWaveFormat.Canales * mWaveFormat.BytesPorMuestra)) * (mWaveFormat.Canales * mWaveFormat.BytesPorMuestra));
 
-			if (index > mDatosRaw.Length-1)
+			if (index > mDatosRaw.Length - 1)
 			{
 				return new byte[0];
 			}
@@ -109,7 +106,7 @@ namespace BibliotecaMaf.Clases.Audio
 					Resul = new byte[0];
 					if (Durac == 0)
 					{
-						Resul = new byte[mDatosRaw.Length-index];
+						Resul = new byte[mDatosRaw.Length - index];
 						Array.Copy(mDatosRaw, index, Resul, 0, mDatosRaw.Length - index);
 					}
 					else
@@ -179,7 +176,7 @@ namespace BibliotecaMaf.Clases.Audio
 					Valor = mDatosRaw[(NumeroDeMuestra * Paso)];
 					break;
 				case 2:
-					Valor = (mDatosRaw[(NumeroDeMuestra * Paso)+1] * 256) + mDatosRaw[(NumeroDeMuestra * Paso) ];
+					Valor = (mDatosRaw[(NumeroDeMuestra * Paso) + 1] * 256) + mDatosRaw[(NumeroDeMuestra * Paso)];
 					break;
 			}
 			return Valor;

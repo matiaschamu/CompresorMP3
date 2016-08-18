@@ -109,7 +109,6 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="BufferCircular.cs" />
     <Compile Include="LAME.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -126,7 +125,6 @@
     <Compile Include="Utilidades.cs" />
     <Compile Include="RawDatos.cs" />
     <Compile Include="RawFormat.cs" />
-    <Compile Include="WaveInsertStream.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

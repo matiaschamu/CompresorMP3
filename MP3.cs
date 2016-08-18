@@ -27,26 +27,22 @@ namespace BibliotecaMaf.Clases.Audio
 
 		//Calidad personalizada (VBR)
 		public ConversorMP3(Stream output, Audio.Lame.CalidadVBR calidad)
-			: this(output, Audio.Lame.Calidad.CalidadNormal, (int) calidad, LHV1.TipoDeCodificacion.VBR, new RawFormat(44100, 16, 1))
+			: this(output, Audio.Lame.Calidad.CalidadNormal, (int)calidad, LHV1.TipoDeCodificacion.VBR, new RawFormat(44100, 16, 1))
 		{
 		}
 
 		[Obsolete("por favor use en su lugar public ConversorMP3(Stream output, Audio.Lame.BitRates calidad, RawFormat formato).")]
 		//Calidad personalizada (CBR)
 		public ConversorMP3(Stream output, Audio.Lame.BitRates calidad, int Muestras)
-			: this(output, Audio.Lame.Calidad.CalidadNormal, (int) calidad, LHV1.TipoDeCodificacion.CBR, new RawFormat(Muestras, 16, 1))
+			: this(output, Audio.Lame.Calidad.CalidadNormal, (int)calidad, LHV1.TipoDeCodificacion.CBR, new RawFormat(Muestras, 16, 1))
 		{
 		}
 
 		public ConversorMP3(Stream output, Audio.Lame.BitRates calidad, RawFormat formato)
-			: this(output, Audio.Lame.Calidad.CalidadNormal, (int) calidad, LHV1.TipoDeCodificacion.CBR, formato)
+			: this(output, Audio.Lame.Calidad.CalidadNormal, (int)calidad, LHV1.TipoDeCodificacion.CBR, formato)
 		{
-			
+
 		}
-
-
-
-
 
 		private ConversorMP3(Stream output, Audio.Lame.Calidad calidadPredefinida, int nivel, LHV1.TipoDeCodificacion tipo, RawFormat formato)
 			: base(output)
@@ -82,12 +78,12 @@ namespace BibliotecaMaf.Clases.Audio
 
 			//Dimensiono los buffers de entrada y salida, segun la informacion retornada por beInitStream
 			m_BufferDeSalida = new byte[m_TamBufferDeSalidaCodec];
-			m_TamBufferDeEntradaCodec = 2*m_Samples;
+			m_TamBufferDeEntradaCodec = 2 * m_Samples;
 		}
 
 		public int TamañoDelBuffer()
 		{
-			return (int) m_TamBufferDeEntradaCodec;
+			return (int)m_TamBufferDeEntradaCodec;
 		}
 
 		protected override void Dispose(bool Disposing)
@@ -158,7 +154,7 @@ namespace BibliotecaMaf.Clases.Audio
 				if (mFlushEjecutado == false)
 				{
 
-					Ret = Audio.Lame.NativeMethods.Convertir(m_HandleStream, m_BufferDeEntrada, 0, (uint) m_BufferDeEntrada.Length, m_BufferDeSalida, ref CantidadCodificada);
+					Ret = Audio.Lame.NativeMethods.Convertir(m_HandleStream, m_BufferDeEntrada, 0, (uint)m_BufferDeEntrada.Length, m_BufferDeSalida, ref CantidadCodificada);
 					if (Ret == Audio.Lame.NativeMethods.SUCCESSFUL)
 					{
 						//Grabo la informacion convertida
@@ -166,7 +162,7 @@ namespace BibliotecaMaf.Clases.Audio
 						{
 							try
 							{
-								base.Write(m_BufferDeSalida, 0, (int) CantidadCodificada);
+								base.Write(m_BufferDeSalida, 0, (int)CantidadCodificada);
 							}
 							catch
 							{
@@ -195,7 +191,7 @@ namespace BibliotecaMaf.Clases.Audio
 						{
 							try
 							{
-								base.Write(m_BufferDeSalida, 0, (int) CantidadCodificada);
+								base.Write(m_BufferDeSalida, 0, (int)CantidadCodificada);
 							}
 							catch
 							{
@@ -294,7 +290,7 @@ namespace BibliotecaMaf.Clases.Audio
 			while (m_BufferDeEntrada.Length > m_TamBufferDeEntradaCodec)
 			{
 				//Convierto la porcion del archivo, enviada en el array InfoAConvertir
-				Ret = Audio.Lame.NativeMethods.Convertir(m_HandleStream, m_BufferDeEntrada, 0, (uint) m_TamBufferDeEntradaCodec, m_BufferDeSalida, ref CantidadCodificada);
+				Ret = Audio.Lame.NativeMethods.Convertir(m_HandleStream, m_BufferDeEntrada, 0, (uint)m_TamBufferDeEntradaCodec, m_BufferDeSalida, ref CantidadCodificada);
 
 				byte[] Temp = new byte[m_BufferDeEntrada.Length - m_TamBufferDeEntradaCodec];
 				Array.Copy(m_BufferDeEntrada, m_TamBufferDeEntradaCodec, Temp, 0, Temp.Length);
@@ -307,7 +303,7 @@ namespace BibliotecaMaf.Clases.Audio
 					{
 						try
 						{
-							base.Write(m_BufferDeSalida, 0, (int) CantidadCodificada);
+							base.Write(m_BufferDeSalida, 0, (int)CantidadCodificada);
 						}
 						catch
 						{

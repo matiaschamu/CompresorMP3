@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using NAudio.Wave;
 
-
 namespace BibliotecaMaf.Clases.Audio
 {
 	public class ReproductorEventArg : EventArgs
@@ -64,8 +63,8 @@ namespace BibliotecaMaf.Clases.Audio
 			MuestrasPorSegundo = muestrasporsegundo;
 			Canales = canales;
 			BitsPorMuestra = bitspormuestra;
-			double mTiempomseg = (double) bytesreproducidos/canales/(bitspormuestra/8)/muestrasporsegundo*10000000;
-			TiempoReproducido = new TimeSpan((long) mTiempomseg);
+			double mTiempomseg = (double)bytesreproducidos / canales / (bitspormuestra / 8) / muestrasporsegundo * 10000000;
+			TiempoReproducido = new TimeSpan((long)mTiempomseg);
 		}
 	}
 
@@ -279,7 +278,7 @@ namespace BibliotecaMaf.Clases.Audio
 		{
 			get
 			{
-				return new TimeSpan((PlayingBytesCount/mWaveFormat.AverageBytesPerSecond*10000000));
+				return new TimeSpan((PlayingBytesCount / mWaveFormat.AverageBytesPerSecond * 10000000));
 			}
 		}
 
@@ -306,7 +305,7 @@ namespace BibliotecaMaf.Clases.Audio
 		/// <param name="Bits">Cantidad de bits para la reproduccion</param>
 		/// <param name="Canales">Cantidad de canales para la reproduccion</param>
 		/// <param name="audio">Datos de audio que se cargaran al inicio, es Opcional</param>
-		public void Reproducir(int TamañoBuffer, int MuestrasPorSeg, int Bits, int Canales, RawDatos audio=null)
+		public void Reproducir(int TamañoBuffer, int MuestrasPorSeg, int Bits, int Canales, RawDatos audio = null)
 		{
 			Console.Write("Iniciando Sonido \r\n");
 			mCancelarReproduccion = true;
@@ -323,7 +322,7 @@ namespace BibliotecaMaf.Clases.Audio
 
 				if (AvisoBufferLow == 0)
 				{
-					AvisoBufferLow = (int) (TamañoBuffer*0.1);
+					AvisoBufferLow = (int)(TamañoBuffer * 0.1);
 				}
 
 				mWaveProvider = new BufferedWaveProvider(mWaveFormat);
