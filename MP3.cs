@@ -4,7 +4,7 @@ using BibliotecaMaf.Clases.Audio.Lame;
 
 namespace BibliotecaMaf.Clases.Audio
 {
-	[Obsolete("por favor use en su lugar NAudio.Lame.LameMP3FileWriter.")]
+	[Obsolete("por favor use en su lugar NAudio.Lame.LameMP3FileWriter. ")]
 	public class ConversorMP3 : BinaryWriter
 	{
 		private bool mDisposed = false;
