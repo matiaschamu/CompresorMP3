@@ -89,8 +89,8 @@
     <Reference Include="NAudio, Version=1.8.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\..\..\Trabajos para Javier\Grabadora\Programa PC\Grabadora y Reproductor\Reproductor\packages\NAudio.1.8.3\lib\net35\NAudio.dll</HintPath>
     </Reference>
-    <Reference Include="NAudio.Lame, Version=1.0.5.27653, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\Trabajos para Javier\Grabadora\Programa PC\Grabadora y Reproductor\Reproductor\packages\NAudio.Lame.1.0.6\lib\net20\NAudio.Lame.dll</HintPath>
+    <Reference Include="NAudio.Lame, Version=1.0.5.22475, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\Trabajos para Javier\Grabadora\Programa PC\Grabadora y Reproductor\Reproductor\packages\NAudio.Lame.1.0.7\lib\net20\NAudio.Lame.dll</HintPath>
     </Reference>
     <Reference Include="System">
       <Name>System</Name>
