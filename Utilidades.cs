@@ -20,7 +20,7 @@ namespace BibliotecaMaf.Clases.Audio
         /// </summary>
         /// <param name="Segundos">Cantidad de segundos generada</param>
         /// <returns>RawDatos con la onda generada</returns>
-        public static RawDatos GenerarBeepInicial(int Segundos)
+        public static RawDatosA GenerarBeepInicial(int Segundos)
         {
             if (Segundos > 0)
             {
@@ -39,13 +39,13 @@ namespace BibliotecaMaf.Clases.Audio
                             mPcmStream2.Position = 0;
                             mPcmStream2.Read(Buf, tamañoAnterior, (int)mPcmStream2.Length);
                         }
-                        return new RawDatos(Buf, new RawFormat(48000, 16, 1));
+                        return new RawDatosA(Buf, new RawFormat(48000, 16, 1));
                     }
                 }
             }
             else
             {
-                return new RawDatos(new byte[0], new RawFormat(48000, 16, 1));
+                return new RawDatosA(new byte[0], new RawFormat(48000, 16, 1));
             }
         }
 
@@ -54,7 +54,7 @@ namespace BibliotecaMaf.Clases.Audio
         /// </summary>
         /// <param name="Segundos">Cantidad de segundos generada</param>
         /// <returns>RawDatos con la onda generada</returns>
-        public static RawDatos GenerarBeep(int Segundos)
+        public static RawDatosA GenerarBeep(int Segundos)
         {
             if (Segundos > 0)
             {
@@ -69,12 +69,24 @@ namespace BibliotecaMaf.Clases.Audio
                         mPcmStream.Position = 0;
                         mPcmStream.Read(Buf, tamañoAnterior, (int)mPcmStream.Length);
                     }
-                    return new RawDatos(Buf, new RawFormat(48000, 16, 1));
+                    return new RawDatosA(Buf, new RawFormat(48000, 16, 1));
                 }
             }
             else
             {
-                return new RawDatos(new byte[0], new RawFormat(48000, 16, 1));
+                return new RawDatosA(new byte[0], new RawFormat(48000, 16, 1));
+            }
+        }
+
+        public static RawDatosA GenerarSilencio(int mSeg)
+        {
+            if (mSeg > 0)
+            {
+                return new RawDatosA(new byte[96 * mSeg], new RawFormat(48000, 16, 1));
+            }
+            else
+            {
+                return new RawDatosA(new RawFormat(48000, 16, 1));
             }
         }
 
@@ -83,7 +95,7 @@ namespace BibliotecaMaf.Clases.Audio
         /// </summary>
         /// <param name="PathMP3">Path donde esta ubicado el archivo MP3</param>
         /// <returns>RawDatos con la informacion del archivo MP3</returns>
-        public static RawDatos Mp3ArchivoToRawBytes(string PathMP3)
+        public static RawDatosA Mp3ArchivoToRawBytes(string PathMP3)
         {
             try
             {
@@ -94,7 +106,7 @@ namespace BibliotecaMaf.Clases.Audio
                     {
                         byte[] mRetorno = new byte[mPcmStream.Length];
                         int mLeido = mPcmStream.Read(mRetorno, 0, mRetorno.Length);
-                        return new RawDatos(mRetorno, new RawFormat(mPcmStream.WaveFormat.SampleRate, mPcmStream.WaveFormat.BitsPerSample, mPcmStream.WaveFormat.Channels));
+                        return new RawDatosA(mRetorno, new RawFormat(mPcmStream.WaveFormat.SampleRate, mPcmStream.WaveFormat.BitsPerSample, mPcmStream.WaveFormat.Channels));
                     }
                     catch (Exception)
                     {
@@ -119,7 +131,7 @@ namespace BibliotecaMaf.Clases.Audio
         /// </summary>
         /// <param name="streamMp3">Stream donde se encuentran los Frames MP3</param>
         /// <returns>Devuelve una objeto RawDatos con la informacion PCM convertida</returns>
-        public static RawDatos Mp3StreamToRawBytes(System.IO.Stream streamMp3)
+        public static RawDatosA Mp3StreamToRawBytes(System.IO.Stream streamMp3)
         {
             try
             {
@@ -130,7 +142,7 @@ namespace BibliotecaMaf.Clases.Audio
                     {
                         byte[] mRetorno = new byte[mPcmStream.Length];
                         int mLeido = mPcmStream.Read(mRetorno, 0, mRetorno.Length);
-                        return new RawDatos(mRetorno, new RawFormat(mPcmStream.WaveFormat.SampleRate, mPcmStream.WaveFormat.BitsPerSample, mPcmStream.WaveFormat.Channels));
+                        return new RawDatosA(mRetorno, new RawFormat(mPcmStream.WaveFormat.SampleRate, mPcmStream.WaveFormat.BitsPerSample, mPcmStream.WaveFormat.Channels));
                     }
                     catch (Exception)
                     {
@@ -144,7 +156,7 @@ namespace BibliotecaMaf.Clases.Audio
             }
         }
 
-        public static int Mp3BytesStreamingToRawBytes(byte[] mp3, ref RawDatos datos, ref IMp3FrameDecompressor decompressor)
+        public static int Mp3BytesStreamingToRawBytes(byte[] mp3, ref RawDatosA datos, ref IMp3FrameDecompressor decompressor)
         {
 
             List<byte> mDatosConvertidos = new List<byte>();
@@ -183,7 +195,7 @@ namespace BibliotecaMaf.Clases.Audio
                 }
             } while (M.Position < M.Length);
 
-            datos = new RawDatos(new RawFormat(decompressor.OutputFormat.SampleRate, decompressor.OutputFormat.BitsPerSample, decompressor.OutputFormat.Channels));
+            datos = new RawDatosA(new RawFormat(decompressor.OutputFormat.SampleRate, decompressor.OutputFormat.BitsPerSample, decompressor.OutputFormat.Channels));
             datos.InsertarRaw(mDatosConvertidos.ToArray());
             return mBytesProcesed;
         }
@@ -204,29 +216,19 @@ namespace BibliotecaMaf.Clases.Audio
         /// <summary>
         /// Devuelve el valor promedio de volumen de 0 - 100% en una ubicacion dada.
         /// </summary>
-        /// <param name="Audio">Datos de audio "RawDatos"</param>
-        /// <param name="OffsetmSeg">Offset en mseg dentro del archivo donde se comienza el muestreo</param>
-        /// <param name="CantMuestras">Cantidad de muestras dentro del calculo</param>
+        /// <param name="audio">Datos de audio "RawDatos"</param>
+        /// <param name="offsetmSeg">Offset en mseg dentro del archivo donde se comienza el muestreo</param>
+        /// <param name="cantMuestras">Cantidad de muestras dentro del calculo</param>
         /// <returns>Un valor de 0-100%</returns>
-        public static byte ValorPorcentualDelVolumen(RawDatos Audio, long OffsetmSeg, int CantMuestras)
+        public static byte ValorPorcentualDelVolumen(RawDatosA audio, long offsetmSeg, int cantMuestras)
         {
-            if (OffsetmSeg < 0 || CantMuestras < 1)
+            if (offsetmSeg < 0 || cantMuestras < 0)
             {
                 throw new Exception();
             }
-            long Promedio = 0;
-            long NumeroMuestra = (OffsetmSeg * Audio.Formato.MuestrasPorSeg / 1000);
-            for (int i = 0; i < CantMuestras; i++)
-            {
-                long ValorMuestra = Audio.GetValorMuestraMono(NumeroMuestra + i);
-                if (ValorMuestra > 32767)
-                {
-                    ValorMuestra = 65536 - ValorMuestra;
-                }
-                Promedio = Promedio + ValorMuestra;
-            }
-            Promedio = Promedio / CantMuestras;
-            return (byte)(Promedio * 100 / 32768);
+            long NumeroMuestraInicio = (offsetmSeg * audio.Formato.MuestrasPorSeg / 1000);
+
+            return ValorPromedioMaximoDelVolumen(audio, NumeroMuestraInicio, cantMuestras, true, (long)0);
         }
 
         /// <summary>
@@ -235,40 +237,154 @@ namespace BibliotecaMaf.Clases.Audio
         /// <param name="audio">Datos de audio "RawDatos"</param>
         /// <param name="offsetmSeg">Offset en mseg dentro del archivo donde se comienza el muestreo</param>
         /// <param name="duracion">La duracion del muestreo en mSeg</param>
-        /// <param name="cantMuestras">Cantidad de muestras dentro del calculo</param>
+        /// <param name="cantMuestras">Cantidad de muestras dentro del calculo, si es 0 se calculan todas las muestras</param>
         /// <returns>Un valor de 0-100%</returns>
-        public static byte ValorMaximoDelVolumen(RawDatos audio, long offsetmSeg, long duracionMseg, int cantMuestras)
+        public static byte ValorMaximoDelVolumen(RawDatosA audio, long offsetmSeg, long duracionMseg, int cantMuestras)
         {
-            if (offsetmSeg < 0 || cantMuestras < 1)
+            if (offsetmSeg < 0 || cantMuestras < 0 || duracionMseg < 0)
             {
                 throw new Exception();
             }
-            long mValorMax = 0;
-            long NumeroMuestra = (offsetmSeg * audio.Formato.MuestrasPorSeg / 1000);
-            double mCalcSaltos = ((double)(audio.Formato.MuestrasPorSeg)) / 1000 * duracionMseg / cantMuestras;
-            long mSaltoMuestras = (long)mCalcSaltos;
 
-            if (mSaltoMuestras == 0)
+            long NumeroMuestraInicio = (offsetmSeg * audio.Formato.MuestrasPorSeg / 1000);
+            long Duracion = (duracionMseg * audio.Formato.MuestrasPorSeg / 1000);
+
+            return ValorPromedioMaximoDelVolumen(audio, NumeroMuestraInicio, Duracion, false, (long)cantMuestras);
+        }
+
+        /// <summary>
+        /// Devuelve el valor Maximo o Promedio de Volumen de 0 - 100% en una ubicacion determinada hasta la duracion indicada distribuyendo las muestras de forma proporcional.
+        /// Si el audio es stereo se devuelve el valor Maximo o Promedio del promedio de los dos canales.
+        /// </summary>
+        /// <param name="audio">Datos de audio "RawDatos"</param>
+        /// <param name="sampleStart">Offset dentro del archivo donde se comienza el muestreo,
+        /// el paso es de a muestras completas</param>
+        /// <param name="sampleLenght">La cantidad de muestras</param>
+        /// <param name="returnPromedio">Si es false devuelve el valor Maximo(pico) de volumen, si es true devuelve el promedio de volumen</param>
+        /// <param name="sampleCount">Opcional, la cantidad de muestras que se quieren en vez de comprobar el audio completo, si es 0 se comprueba todo el audio</param>
+        /// <returns>Un valor de 0-100% que corresponde al valor Maximo o Promedio del audio</returns>
+        public static byte ValorPromedioMaximoDelVolumen(RawDatosA audio, long sampleStart, long sampleLenght, bool returnPromedio, long sampleCount = 0)
+        {
+            if (sampleStart < 0 || sampleLenght < 0 || sampleCount < 0)
             {
-                mSaltoMuestras = 1;
-                cantMuestras = (int)(((double)(audio.Formato.MuestrasPorSeg)) / 1000 * duracionMseg);
+                throw new Exception();
             }
 
-            for (long i = 0; i < cantMuestras; i++)
+            if (audio.DatosRaw.Length == 0 || sampleStart > audio.NumeroDeMuestras - 1)
             {
-                long ValorMuestra = audio.GetValorMuestraMono(NumeroMuestra + i * mSaltoMuestras);
-                if (ValorMuestra > 32767)
+                return 0;
+            }
+
+            if ((sampleLenght + sampleStart) > (audio.NumeroDeMuestras))
+            {
+                sampleLenght = audio.NumeroDeMuestras - sampleStart;
+            }
+
+            bool is16BitSample = false;
+            if (audio.Formato.Bits == 16)
+            {
+                is16BitSample = true;
+            }
+            int mStep = 0;
+            if (sampleCount > 0)
+            {
+                mStep = (int)((sampleLenght - sampleStart) / sampleCount);
+            }
+
+            short mValorMax = 0;
+            long mValorPromedio = 0;
+            int mIteracciones = 0;
+            for (long i = sampleStart; i < (sampleStart + sampleLenght); i++)
+            {
+                short ValorMuestra = 0;
+                if (audio.Formato.Canales == 1)
                 {
-                    ValorMuestra = 65536 - ValorMuestra;
+                    ValorMuestra = AbsSample(audio.GetValorMuestraMono(i), is16BitSample);
+                }
+                else
+                {
+                    ValorMuestra = AbsSample(audio.GetValorMuestraIzquierda(i), is16BitSample);
+                    short ValorMuestra2 = AbsSample(audio.GetValorMuestraDerecha(i), is16BitSample);
+                    ValorMuestra = (short)((ValorMuestra + ValorMuestra2) / 2);
                 }
 
                 if (ValorMuestra > mValorMax)
                 {
                     mValorMax = ValorMuestra;
                 }
+                mValorPromedio = mValorPromedio + ValorMuestra;
+                mIteracciones++;
+                if (mStep > 0)
+                {
+                    i = i + mStep - 1;
+                }
             }
-            return (byte)(mValorMax * 100 / 32768);
+
+            if (is16BitSample)
+            {
+                if (returnPromedio)
+                {
+                    return (byte)((mValorPromedio / mIteracciones) * 100 / 32767);
+                }
+                else
+                {
+                    return (byte)(mValorMax * 100 / 32767);
+                }
+            }
+            else
+            {
+                if (returnPromedio)
+                {
+                    return (byte)((mValorPromedio / mIteracciones) * 100 / 127);
+                }
+                else
+                {
+                    return (byte)(mValorMax * 100 / 127);
+                }
+            }
         }
+        /// <summary>
+        /// Devuelve el valor pico absoluto de una muestra, si es de 8bit devuelve de 0-127 y si es de 16bit devuelve 0-32767
+        /// </summary>
+        /// <param name="valorMuestra">Valor al que se le quiere sacar el valor absoluto</param>
+        /// <param name="is16BitSample">es true si la muestra es de 16bits</param>
+        /// <returns> Si es de 8bit devuelve de 0-127 y si es de 16bit devuelve 0-32767</returns>
+        public static short AbsSample(short valorMuestra, bool is16BitSample)
+        {
+            short ret = 0;
+            ret = valorMuestra;
+            if (is16BitSample)
+            {
+                if (valorMuestra < 0)
+                {
+                    if (valorMuestra > -32768)
+                    {
+                        ret = (short)(valorMuestra * -1);
+                    }
+                    else
+                    {
+                        ret = 32767;
+                    }
+                }
+            }
+            else
+            {
+                if (valorMuestra > 127)
+                {
+                    if (valorMuestra == 255)
+                    {
+                        valorMuestra = 254;
+                    }
+                    ret = (short)(valorMuestra - 127);
+                }
+                else
+                {
+                    ret = (short)(127 - valorMuestra);
+                }
+            }
+            return ret;
+        }
+
 
         /// <summary>
         /// Devuelve un valor Double que indica la duracion del archivo en mSeg
@@ -277,7 +393,7 @@ namespace BibliotecaMaf.Clases.Audio
         /// <returns>Duracion del archivo en mSeg</returns>
         public static double DuracionmSegMp3(string PathArchivo)
         {
-            RawDatos Audio = Mp3ArchivoToRawBytes(PathArchivo);
+            RawDatosA Audio = Mp3ArchivoToRawBytes(PathArchivo);
             return Audio.Duracion.TotalMilliseconds;
         }
 

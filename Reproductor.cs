@@ -305,7 +305,7 @@ namespace BibliotecaMaf.Clases.Audio
         /// <param name="Bits">Cantidad de bits para la reproduccion</param>
         /// <param name="Canales">Cantidad de canales para la reproduccion</param>
         /// <param name="audio">Datos de audio que se cargaran al inicio, es Opcional</param>
-        public void Reproducir(int TamañoBuffer, int MuestrasPorSeg, int Bits, int Canales, RawDatos audio = null)
+        public void Reproducir(int TamañoBuffer, int MuestrasPorSeg, int Bits, int Canales, RawDatosA audio = null)
         {
             Console.Write("Iniciando Sonido \r\n");
             mCancelarReproduccion = true;
@@ -373,7 +373,7 @@ namespace BibliotecaMaf.Clases.Audio
         /// </summary>
         /// <param name="Audio">Datos de audio para reproducir</param>
         /// <param name="TamañoBuffer">Establece el tamaño del buffer para la reproduccion en curso</param>
-        public void Reproducir(RawDatos Audio, int TamañoBuffer)
+        public void Reproducir(RawDatosA Audio, int TamañoBuffer)
         {
             Reproducir(TamañoBuffer, Audio.Formato.MuestrasPorSeg, Audio.Formato.Bits, Audio.Formato.Canales, Audio);
         }

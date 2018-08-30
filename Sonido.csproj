@@ -86,8 +86,8 @@
     <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NAudio, Version=1.8.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\Trabajos para Javier\Grabadora\Programa PC\Grabadora y Reproductor\Reproductor\packages\NAudio.1.8.3\lib\net35\NAudio.dll</HintPath>
+    <Reference Include="NAudio, Version=1.8.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\NAudio.1.8.4\lib\net35\NAudio.dll</HintPath>
     </Reference>
     <Reference Include="NAudio.Lame, Version=1.0.5.22475, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\..\..\Trabajos para Javier\Grabadora\Programa PC\Grabadora y Reproductor\Reproductor\packages\NAudio.Lame.1.0.7\lib\net20\NAudio.Lame.dll</HintPath>
@@ -113,6 +113,7 @@
     <Compile Include="MP3.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="RawDatosA.cs" />
     <Compile Include="ReMuestreo.cs" />
     <Compile Include="Reproductor.cs" />
     <Compile Include="Resources.Designer.cs">

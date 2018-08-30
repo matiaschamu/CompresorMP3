@@ -5,8 +5,19 @@ using System.Text;
 
 namespace BibliotecaMaf.Clases.Audio
 {
+    [Obsolete("En su lugar utilice RawDatosA")]
     public class RawDatos
     {
+        public struct Conversacion
+        {
+            public readonly TimeSpan Fecha;
+            public readonly RawDatos Audio;
+            public Conversacion(TimeSpan fecha, RawDatos audio)
+            {
+                Fecha = fecha;
+                Audio = audio;
+            }
+        }
         RawFormat mWaveFormat;
         byte[] mDatosRaw;
         TimeSpan mDuracion;
@@ -119,14 +130,130 @@ namespace BibliotecaMaf.Clases.Audio
             }
         }
 
+        public byte[] GetRawBytes(long start, long lenght)
+        { 
+            if (start > mDatosRaw.Length - 1)
+            {
+                return new byte[0];
+            }
+            else
+            {
+                byte[] Resul = new byte[0];
+                if ((start + lenght) > mDatosRaw.Length)
+                {
+                    Resul = new byte[mDatosRaw.Length - start];
+                    Array.Copy(mDatosRaw, start, Resul, 0, mDatosRaw.Length - start);
+                }
+                else
+                {
+                    Resul = new byte[0];
+                    if (lenght == 0)
+                    {
+                        Resul = new byte[mDatosRaw.Length - start];
+                        Array.Copy(mDatosRaw, start, Resul, 0, mDatosRaw.Length - start);
+                    }
+                    else
+                    {
+                        Resul = new byte[lenght];
+                        Array.Copy(mDatosRaw, start, Resul, 0, lenght);
+                    }
+                }
+                return Resul;
+            }
+        }
+
+            /// <summary>
+            /// Devuelve fragmentos de audio separados en conversaciones en base a un nivel umbral
+            /// </summary>
+            /// <param name="levelTrigger">Nivel a partir del cual se considera el umbral 0 - 100%</param>
+            /// <returns>Devuelve fragmentos de audio separados en conversaciones en base a un nivel umbral</returns>
+            public List<Conversacion> GetConversacionesMono(short levelTrigger)
+        {
+            List<Conversacion> mResult = new List<Conversacion>();
+            int mStart = 0;
+            short mValorMuestra = 0;
+            int Paso = mWaveFormat.BytesPorMuestra;
+            short mTrigger = 0;
+
+            if (Formato.Bits == 8)
+            {
+                mTrigger = (short)(levelTrigger * 127 / 100);
+            }
+            else
+            {
+                mTrigger = (short)(levelTrigger * 32767 / 100);
+            }
+
+            switch (mWaveFormat.BytesPorMuestra)
+            {
+                case 1:
+                    for (int i = mStart; i < mNumeroDeMuestras; i++)
+                    {
+                        mValorMuestra = mDatosRaw[(i * Paso)];
+                    }
+
+                    break;
+                case 2:
+                    for (int i = mStart; i < mNumeroDeMuestras; i++)
+                    {
+                        mValorMuestra = Utilidades.AbsSample((short)((mDatosRaw[(i * Paso) + 1] * 256) + mDatosRaw[(i * Paso)]), true);
+                        if (mValorMuestra > mTrigger)
+                        {
+                            for (int k = i; k < mNumeroDeMuestras; k++)
+                            {
+                                mValorMuestra = Utilidades.AbsSample((short)((mDatosRaw[(k * Paso) + 1] * 256) + mDatosRaw[(k * Paso)]), true);
+                                if (mValorMuestra < mTrigger)
+                                {
+                                    bool mResul = false;
+                                    for (int m = k; m < mNumeroDeMuestras; m++)
+                                    {
+                                        mValorMuestra = Utilidades.AbsSample((short)((mDatosRaw[(m * Paso) + 1] * 256) + mDatosRaw[(m * Paso)]), true);
+                                        if (mValorMuestra < mTrigger)
+                                        {
+                                            if ((m - (3 * mWaveFormat.MuestrasPorSeg)) > k)
+                                            {
+                                                mResult.Add(new Conversacion(new TimeSpan(0), new RawDatos(GetRawBytes((long)i * 2, (k + (1 * mWaveFormat.BytesPorSeg))), mWaveFormat)));
+                                                i = m;
+                                                mResul = true;
+                                                break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            k = m;
+                                            break;
+                                        }
+                                    }
+                                    if (mResul)
+                                    {
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+
+                                }
+                            }
+                        }
+                        else
+                        {
+
+                        }
+                    }
+                    break;
+            }
+            return mResult;
+        }
+
+
         /// <summary>
         /// Obtiene el valor de la muestra del canal Izquierdo
         /// </summary>
         /// <param name="NumeroDeMuestra">Numero de la muestra necesaria con base 0</param>
-        /// <returns>Retorna el valor de la muestra</returns>
-        public long GetValorMuestraIzquierda(long NumeroDeMuestra)
+        /// <returns>Retorna el valor de la muestra de -32768 a 32767 en 16bit y de 0 a 255 en 8bit</returns>
+        public short GetValorMuestraIzquierda(long NumeroDeMuestra)
         {
-            long Valor = 0;
+            short Valor = 0;
             int Paso = mWaveFormat.BytesPorMuestra * 2;
             switch (mWaveFormat.BytesPorMuestra)
             {
@@ -134,7 +261,7 @@ namespace BibliotecaMaf.Clases.Audio
                     Valor = mDatosRaw[NumeroDeMuestra * Paso];
                     break;
                 case 2:
-                    Valor = (mDatosRaw[NumeroDeMuestra * Paso] * 256) + mDatosRaw[(NumeroDeMuestra * Paso) + 1];
+                    Valor = (short)(((mDatosRaw[(NumeroDeMuestra * Paso) + 1]) * 256) + mDatosRaw[(NumeroDeMuestra * Paso)]);
                     break;
             }
             return Valor;
@@ -143,32 +270,36 @@ namespace BibliotecaMaf.Clases.Audio
         /// <summary>
         /// Obtiene el valor de la muestra del canal Derecho
         /// </summary>
-        /// <param name="NumeroDeMuestra">Numero de la muestra necesaria</param>
-        /// <returns>Retorna el valor de la muestra</returns>
-        public long GetValorMuestraDerecha(long NumeroDeMuestra)
+        /// <param name="NumeroDeMuestra">Numero de la muestra necesaria, con base 0</param>
+        /// <returns>Retorna el valor de la muestra de -32768 a 32767 en 16bit y de 0 a 255 en 8bit</returns>
+        public short GetValorMuestraDerecha(long NumeroDeMuestra)
         {
-            long Valor = 0;
+            short Valor = 0;
             int Paso = mWaveFormat.BytesPorMuestra * 2;
             switch (mWaveFormat.BytesPorMuestra)
             {
                 case 1:
-                    Valor = mDatosRaw[(NumeroDeMuestra * Paso) + 2];
+                    Valor = mDatosRaw[(NumeroDeMuestra * Paso) + 1];
                     break;
                 case 2:
-                    Valor = (mDatosRaw[(NumeroDeMuestra * Paso) + 2] * 256) + mDatosRaw[(NumeroDeMuestra * Paso) + 3];
+                    Valor = (short)((mDatosRaw[(NumeroDeMuestra * Paso) + 3] * 256) + mDatosRaw[(NumeroDeMuestra * Paso) + 2]);
                     break;
             }
             return Valor;
         }
 
         /// <summary>
-        /// Obtiene el valor de la muestra del canal Mono
+        /// Obtiene el valor de la muestra del canal en representacion de complemento de a dos
         /// </summary>
-        /// <param name="NumeroDeMuestra">Numero de la muestra necesaria</param>
-        /// <returns>Retorna el valor de la muestra</returns>
-        public long GetValorMuestraMono(long NumeroDeMuestra)
+        /// <param name="NumeroDeMuestra">Numero de la muestra necesaria, con base 0</param>
+        /// <returns>Retorna el valor de la muestra de -32768 a 32767 en 16bit y de 0 a 255 en 8bit</returns>
+        public short GetValorMuestraMono(long NumeroDeMuestra)
         {
-            long Valor = 0;
+            if (mWaveFormat.Canales > 1)
+            {
+                throw new Exception("El formato debe ser mono");
+            }
+            short Valor = 0;
             int Paso = mWaveFormat.BytesPorMuestra;
             switch (mWaveFormat.BytesPorMuestra)
             {
@@ -176,7 +307,7 @@ namespace BibliotecaMaf.Clases.Audio
                     Valor = mDatosRaw[(NumeroDeMuestra * Paso)];
                     break;
                 case 2:
-                    Valor = (mDatosRaw[(NumeroDeMuestra * Paso) + 1] * 256) + mDatosRaw[(NumeroDeMuestra * Paso)];
+                    Valor = (short)((mDatosRaw[(NumeroDeMuestra * Paso) + 1] * 256) + mDatosRaw[(NumeroDeMuestra * Paso)]);
                     break;
             }
             return Valor;

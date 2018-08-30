@@ -13,7 +13,7 @@ namespace BibliotecaMaf.Clases.Audio
     }
     public static class ReMuestreo
     {
-        public static RawDatos ResamplerStream(RawDatos DatosOrigen, RawFormat FormatoDestino)
+        public static RawDatosA ResamplerStream(RawDatosA DatosOrigen, RawFormat FormatoDestino)
         {
             System.IO.MemoryStream Datos = null;
             try
@@ -32,13 +32,14 @@ namespace BibliotecaMaf.Clases.Audio
                 }
             }
         }
-        private static RawDatos ResamplerStream(WaveStream StreamOrigen, NAudio.Wave.WaveFormat FormatoDestino)
+        private static RawDatosA ResamplerStream(WaveStream StreamOrigen, NAudio.Wave.WaveFormat FormatoDestino)
         {
             if (StreamOrigen.Length > 0)
             {
                 ResamplerDmoStream Resampler = null;
                 WaveFormatConversionStream Resampler2 = null;
-                byte[] BufferResult = new byte[0];
+                //byte[] BufferResult = new byte[0];
+                List<byte> BufferResult = new List<byte>();
                 eModoDeMuestreo mModoMuestreo = eModoDeMuestreo.eResamplerDmoStream;
                 try
                 {
@@ -80,9 +81,11 @@ namespace BibliotecaMaf.Clases.Audio
 
                     if (Leidos > 0)
                     {
-                        int IndiceCopia = BufferResult.Length;
-                        Array.Resize(ref BufferResult, BufferResult.Length + Leidos);
-                        Array.Copy(Temp, 0, BufferResult, IndiceCopia, Leidos);
+                        //int IndiceCopia = BufferResult.Length;
+                        //Array.Resize(ref BufferResult, BufferResult.Length + Leidos);
+                        //Array.Copy(Temp, 0, BufferResult, IndiceCopia, Leidos);
+
+                        BufferResult.AddRange(Temp);
                     }
                 } while (Leidos > 0);
 
@@ -97,14 +100,15 @@ namespace BibliotecaMaf.Clases.Audio
                 }
                 if (AgregarBytes > 0)
                 {
-                    Array.Resize(ref BufferResult, BufferResult.Length + AgregarBytes);
+                    //Array.Resize(ref BufferResult, BufferResult.Length + AgregarBytes);
+                    BufferResult.AddRange(new byte[AgregarBytes]);
                 }
 
-                return new RawDatos(BufferResult, new RawFormat(FormatoDestino.SampleRate, FormatoDestino.BitsPerSample, FormatoDestino.Channels));
+                return new RawDatosA(BufferResult.ToArray(), new RawFormat(FormatoDestino.SampleRate, FormatoDestino.BitsPerSample, FormatoDestino.Channels));
             }
             else
             {
-                return new RawDatos(new RawFormat(FormatoDestino.SampleRate, FormatoDestino.BitsPerSample, FormatoDestino.Channels));
+                return new RawDatosA(new RawFormat(FormatoDestino.SampleRate, FormatoDestino.BitsPerSample, FormatoDestino.Channels));
             }
         }
     }
